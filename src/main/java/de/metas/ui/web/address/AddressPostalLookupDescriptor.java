@@ -1,5 +1,7 @@
 package de.metas.ui.web.address;
 
+import static org.adempiere.model.InterfaceWrapperHelper.load;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.adempiere.ad.trx.api.ITrx;
+import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DBException;
 import org.adempiere.util.Check;
 import org.compiere.model.I_C_Location;
@@ -55,13 +58,17 @@ import lombok.NonNull;
 
 public class AddressPostalLookupDescriptor implements LookupDescriptor, LookupDataSourceFetcher
 {
+	public static final AddressPostalLookupDescriptor ofCountryLookup(@NonNull final AddressCountryLookupDescriptor countryLookup)
+	{
+		return new AddressPostalLookupDescriptor(countryLookup);
+	}
+
 	private static final Optional<String> LookupTableName = Optional.of(I_C_Postal.Table_Name);
 	private static final String CACHE_PREFIX = I_C_Postal.Table_Name;
 	private static final String CONTEXT_LookupTableName = I_C_Postal.Table_Name;
 
 	private final AddressCountryLookupDescriptor countryLookup;
 
-	@lombok.Builder
 	private AddressPostalLookupDescriptor(@NonNull final AddressCountryLookupDescriptor countryLookup)
 	{
 		this.countryLookup = countryLookup;
@@ -142,14 +149,24 @@ public class AddressPostalLookupDescriptor implements LookupDescriptor, LookupDa
 	@Override
 	public LookupValue retrieveLookupValueById(final LookupDataSourceContext evalCtx)
 	{
-		final int id = evalCtx.getIdToFilterAsInt(-1);
-		if (id <= 0)
+		final int postalId = evalCtx.getIdToFilterAsInt(-1);
+		if (postalId <= 0)
 		{
-			throw new IllegalStateException("No ID provided in " + evalCtx);
+			throw new AdempiereException("No ID provided in " + evalCtx);
 		}
 
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		final I_C_Postal postal = load(postalId, I_C_Postal.class);
+		if (postal == null)
+		{
+			throw new AdempiereException("No postal found for postalId=" + postalId);
+		}
+		final String postalCode = postal.getPostal();
+		final String city = postal.getCity();
+		final int countryId = postal.getC_Country_ID();
+
+		final LookupValue countryLookupValue = countryLookup.getLookupValueById(countryId);
+
+		return buildPostalLookupValue(postalId, postalCode, city, countryLookupValue.getDisplayNameTrl());
 	}
 
 	@Override
@@ -219,7 +236,7 @@ public class AddressPostalLookupDescriptor implements LookupDescriptor, LookupDa
 				final String postal = rs.getString(I_C_Postal.COLUMNNAME_Postal);
 				final String city = rs.getString(I_C_Postal.COLUMNNAME_City);
 				final int countryId = rs.getInt(I_C_Postal.COLUMNNAME_C_Country_ID);
-				
+
 				final LookupValue countryLookupValue = countryLookup.getLookupValueById(countryId);
 
 				lookupValues.add(buildPostalLookupValue(postalId, postal, city, countryLookupValue.getDisplayNameTrl()));
@@ -236,7 +253,7 @@ public class AddressPostalLookupDescriptor implements LookupDescriptor, LookupDa
 			DB.close(rs, pstmt);
 		}
 	}
-	
+
 	public IntegerLookupValue getLookupValueFromLocation(final I_C_Location locationRecord)
 	{
 		final I_C_Postal postalRecord = locationRecord.getC_Postal();
@@ -244,7 +261,7 @@ public class AddressPostalLookupDescriptor implements LookupDescriptor, LookupDa
 		{
 			return null;
 		}
-		
+
 		final LookupValue countryLookupValue = countryLookup.getLookupValueById(postalRecord.getC_Country_ID());
 
 		return buildPostalLookupValue(postalRecord.getC_Postal_ID(), postalRecord.getPostal(), postalRecord.getCity(), countryLookupValue.getDisplayNameTrl());
