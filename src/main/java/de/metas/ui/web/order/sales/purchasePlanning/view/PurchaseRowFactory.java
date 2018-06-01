@@ -22,6 +22,7 @@ import de.metas.money.Currency;
 import de.metas.money.MoneyService;
 import de.metas.product.ProductId;
 import de.metas.purchasecandidate.PurchaseCandidate;
+import de.metas.purchasecandidate.PurchaseCandidateGroup;
 import de.metas.purchasecandidate.PurchaseCandidateId;
 import de.metas.purchasecandidate.PurchaseDemand;
 import de.metas.purchasecandidate.PurchaseDemandId;
@@ -79,17 +80,17 @@ public class PurchaseRowFactory
 	 */
 	@Builder(builderMethodName = "rowFromPurchaseCandidateBuilder", builderClassName = "RowFromPurchaseCandidateBuilder")
 	private PurchaseRow buildRowFromPurchaseCandidate(
-			@NonNull final PurchaseCandidate purchaseCandidate,
+			@NonNull final PurchaseCandidateGroup purchaseCandidateGroup,
 			@NonNull final PurchaseDemandId purchaseDemandId,
 			@Nullable final Currency convertAmountsToCurrency,
 			@NotNull final LocalDateTime datePromised)
 	{
-		final BPartnerId vendorId = purchaseCandidate.getVendorId();
+		final BPartnerId vendorId = purchaseCandidateGroup.getVendorId();
 		final JSONLookupValue vendor = lookups.createBPartnerLookupValue(vendorId);
 
 		final ProductId productId;
 		final JSONLookupValue product;
-		final VendorProductInfo vendorProductInfo = purchaseCandidate.getVendorProductInfo();
+		final VendorProductInfo vendorProductInfo = purchaseCandidateGroup.getVendorProductInfo();
 		if (vendorProductInfo != null)
 		{
 			productId = vendorProductInfo.getProductId();
@@ -97,16 +98,16 @@ public class PurchaseRowFactory
 		}
 		else
 		{
-			productId = purchaseCandidate.getProductId();
+			productId = purchaseCandidateGroup.getProductId();
 			product = lookups.createProductLookupValue(productId);
 		}
 		final String uom = lookups.createUOMLookupValueForProductId(productId);
 
-		final PurchaseCandidateId processedPurchaseCandidateId = purchaseCandidate.isProcessed()
-				? purchaseCandidate.getId()
+		final PurchaseCandidateId processedPurchaseCandidateId = purchaseCandidateGroup.isProcessed()
+				? purchaseCandidateGroup.getSinglePurchaseCandidateIdOrNull()
 				: null;
 
-		final PurchaseProfitInfo profitInfo = convertToCurrencyIfPossible(purchaseCandidate.getProfitInfo(), convertAmountsToCurrency);
+		final PurchaseProfitInfo profitInfo = convertToCurrencyIfPossible(purchaseCandidateGroup.getProfitInfo(), convertAmountsToCurrency);
 
 		return PurchaseRow.builder()
 				.rowId(PurchaseRowId.lineId(purchaseDemandId, vendorId, processedPurchaseCandidateId))
@@ -114,14 +115,14 @@ public class PurchaseRowFactory
 				.product(product)
 				.profitInfo(profitInfo)
 				.uomOrAvailablility(uom)
-				.qtyToPurchase(purchaseCandidate.getQtyToPurchase())
-				.purchasedQty(purchaseCandidate.getPurchasedQty())
+				.qtyToPurchase(purchaseCandidateGroup.getQtyToPurchase())
+				.purchasedQty(purchaseCandidateGroup.getPurchasedQty())
 				.datePromised(datePromised)
 				.vendorBPartner(vendor)
-				.purchaseCandidateId(purchaseCandidate.getId())
-				.orgId(purchaseCandidate.getOrgId())
-				.warehouseId(purchaseCandidate.getWarehouseId())
-				.readonly(purchaseCandidate.isProcessedOrLocked())
+				.purchaseCandidateId(purchaseCandidateGroup.getSinglePurchaseCandidateIdOrNull())
+				.orgId(purchaseCandidateGroup.getOrgId())
+				.warehouseId(purchaseCandidateGroup.getWarehouseId())
+				.readonly(purchaseCandidateGroup.isProcessedOrLocked())
 				.build();
 	}
 

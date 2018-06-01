@@ -32,6 +32,7 @@ import de.metas.money.grossprofit.GrossProfitPriceFactory;
 import de.metas.order.OrderAndLineId;
 import de.metas.product.ProductId;
 import de.metas.purchasecandidate.PurchaseCandidate;
+import de.metas.purchasecandidate.PurchaseCandidateGroup;
 import de.metas.purchasecandidate.PurchaseCandidateId;
 import de.metas.purchasecandidate.PurchaseDemandId;
 import de.metas.purchasecandidate.VendorProductInfo;
@@ -85,7 +86,7 @@ public class PurchaseRowFactoryTest
 
 		final PurchaseRow candidateRow = purchaseRowFactory
 				.rowFromPurchaseCandidateBuilder()
-				.purchaseCandidate(purchaseCandidate)
+				.purchaseCandidateGroup(PurchaseCandidateGroup.of(purchaseCandidate))
 				.purchaseDemandId(PurchaseDemandId.ofOrderAndLineId(purchaseCandidate.getSalesOrderAndLineId()))
 				.datePromised(SystemTime.asLocalDateTime())
 				.convertAmountsToCurrency(currency)

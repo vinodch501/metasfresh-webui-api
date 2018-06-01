@@ -41,6 +41,7 @@ import de.metas.order.OrderAndLineId;
 import de.metas.order.OrderLineRepository;
 import de.metas.product.ProductId;
 import de.metas.purchasecandidate.PurchaseCandidate;
+import de.metas.purchasecandidate.PurchaseCandidateGroup;
 import de.metas.purchasecandidate.PurchaseDemand;
 import de.metas.purchasecandidate.PurchaseDemandWithCandidates;
 import de.metas.purchasecandidate.SalesOrderLine;
@@ -180,7 +181,7 @@ public class PurchaseRowsLoaderTest
 		//
 		// invoke the method under test
 		final PurchaseRowsList rowsList = loader.load();
-		
+
 		//
 		// Check result
 		final List<PurchaseRow> topLevelRows = rowsList.getTopLevelRows();
@@ -201,7 +202,6 @@ public class PurchaseRowsLoaderTest
 			availabilityCheckService.checkAvailability(request);
 			result = AvailabilityMultiResult.of(AvailabilityResult.builder()
 					.trackingId(request.getTrackingIds().iterator().next())
-					.purchaseCandidate(purchaseCandidate)
 					.qty(TEN)
 					.type(Type.AVAILABLE)
 					.build());
@@ -245,7 +245,7 @@ public class PurchaseRowsLoaderTest
 	{
 		return ImmutableList.of(PurchaseDemandWithCandidates.builder()
 				.purchaseDemand(demand)
-				.purchaseCandidate(purchaseCandidate)
+				.purchaseCandidateGroup(PurchaseCandidateGroup.of(purchaseCandidate))
 				.build());
 	}
 }

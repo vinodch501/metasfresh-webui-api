@@ -262,7 +262,8 @@ public final class PurchaseRowId
 		return availabilityType != null;
 	}
 
-	public PurchaseCandidateId getProcessedPurchaseCandidateId()
+	@VisibleForTesting
+	PurchaseCandidateId getProcessedPurchaseCandidateId()
 	{
 		return processedPurchaseCandidateId;
 	}
