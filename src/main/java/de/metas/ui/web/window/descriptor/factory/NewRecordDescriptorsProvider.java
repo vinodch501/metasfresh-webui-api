@@ -1,5 +1,7 @@
 package de.metas.ui.web.window.descriptor.factory;
 
+import static org.adempiere.model.InterfaceWrapperHelper.save;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.adempiere.exceptions.AdempiereException;
@@ -42,7 +44,7 @@ import de.metas.util.Services;
  * Provides {@link NewRecordDescriptor}s.
  *
  * @author metas-dev <dev@metasfresh.com>
- * 
+ *
  * @task https://github.com/metasfresh/metasfresh/issues/1090
  */
 @Component
@@ -64,6 +66,8 @@ public class NewRecordDescriptorsProvider
 				, 540327 // AD_Window_ID
 				, document -> {
 					final I_C_BPartner_QuickInput template = InterfaceWrapperHelper.getPO(document);
+					template.setAD_User_ID(-1);
+					save(template);
 					Services.get(IBPartnerBL.class).createFromTemplate(template);
 					return template.getC_BPartner_ID();
 				}));

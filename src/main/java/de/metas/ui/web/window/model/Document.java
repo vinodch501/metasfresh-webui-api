@@ -42,6 +42,7 @@ import de.metas.document.exceptions.DocumentProcessingException;
 import de.metas.lang.SOTrx;
 import de.metas.letters.model.Letters;
 import de.metas.logging.LogManager;
+import de.metas.procurement.base.model.I_AD_User;
 import de.metas.ui.web.window.WindowConstants;
 import de.metas.ui.web.window.datatypes.DataTypes;
 import de.metas.ui.web.window.datatypes.DocumentId;
@@ -708,6 +709,12 @@ public final class Document
 				final int adWindowId = documentTypeId.toInt();
 				final String fieldName = fieldDescriptor.getFieldName();
 
+
+				if(I_AD_User.COLUMNNAME_AD_User_ID.equals(fieldName))
+				{
+					return -1;
+				}
+				 // TODO fix this
 				//
 				// Preference (user) - P|
 				{
