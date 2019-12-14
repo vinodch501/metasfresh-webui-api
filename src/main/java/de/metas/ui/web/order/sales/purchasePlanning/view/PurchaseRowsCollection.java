@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 
 import de.metas.ui.web.exceptions.EntityNotFoundException;
 import de.metas.ui.web.view.IViewRow;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import lombok.NonNull;
@@ -39,8 +40,6 @@ import lombok.NonNull;
 
 class PurchaseRowsCollection
 {
-	private static final int DEFAULT_PAGE_LENGTH = 30;
-
 	public static final PurchaseRowsCollection ofSupplier(final PurchaseRowsSupplier rowsSupplier)
 	{
 		return new PurchaseRowsCollection(rowsSupplier);
@@ -66,11 +65,11 @@ class PurchaseRowsCollection
 		return topLevelRowsById.size();
 	}
 
-	public List<PurchaseRow> getPage(final int firstRow, final int pageLength)
+	public List<PurchaseRow> getPage(@NonNull final PageIndex pageIndex)
 	{
 		return topLevelRowsById.values().stream()
-				.skip(firstRow >= 0 ? firstRow : 0)
-				.limit(pageLength > 0 ? pageLength : DEFAULT_PAGE_LENGTH)
+				.skip(pageIndex.getFirstRow())
+				.limit(pageIndex.getPageLength())
 				.collect(ImmutableList.toImmutableList());
 	}
 
@@ -163,7 +162,7 @@ class PurchaseRowsCollection
 	}
 
 	@FunctionalInterface
-	private static interface PurchaseGroupRowEditor
+	private interface PurchaseGroupRowEditor
 	{
 		void edit(final PurchaseRow editableGroupRow, final PurchaseRowId includedRowId, final PurchaseRowChangeRequest request);
 	}

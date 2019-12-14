@@ -10,6 +10,7 @@ import de.metas.ui.web.document.filter.DocumentFilter;
 import de.metas.ui.web.exceptions.EntityNotFoundException;
 import de.metas.ui.web.view.ViewId;
 import de.metas.ui.web.view.ViewRowsOrderBy;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import lombok.NonNull;
@@ -85,8 +86,7 @@ interface HUEditorViewBuffer
 	Stream<HUEditorRow> streamByIdsExcludingIncludedRows(HUEditorRowFilter filter);
 
 	Stream<HUEditorRow> streamPage(
-			int firstRow, 
-			int pageLength,
+			PageIndex pageIndex,
 			HUEditorRowFilter filter,
 			@NonNull final ViewRowsOrderBy orderBys);
 

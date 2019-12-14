@@ -25,6 +25,7 @@ import de.metas.ui.web.exceptions.EntityNotFoundException;
 import de.metas.ui.web.handlingunits.HUIdsFilterHelper.HUIdsFilterData;
 import de.metas.ui.web.view.ViewId;
 import de.metas.ui.web.view.ViewRowsOrderBy;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.model.DocumentQueryOrderBy;
@@ -157,8 +158,7 @@ class HUEditorViewBuffer_FullyCached implements HUEditorViewBuffer
 
 	@Override
 	public Stream<HUEditorRow> streamPage(
-			final int firstRow,
-			final int pageLength,
+			final PageIndex pageIndex,
 			@NonNull final HUEditorRowFilter filter,
 			@NonNull final ViewRowsOrderBy orderBys)
 	{
@@ -167,8 +167,8 @@ class HUEditorViewBuffer_FullyCached implements HUEditorViewBuffer
 				: orderBys.withOrderBys(defaultOrderBys);
 
 		Stream<HUEditorRow> stream = getRows().stream()
-				.skip(firstRow)
-				.limit(pageLength)
+				.skip(pageIndex.getFirstRow())
+				.limit(pageIndex.getPageLength())
 				.filter(HUEditorRowFilters.toPredicate(filter));
 
 		final Comparator<HUEditorRow> comparator = orderBysEffective.toComparatorOrNull();

@@ -40,6 +40,7 @@ import de.metas.ui.web.view.descriptor.SqlViewKeyColumnNamesMap;
 import de.metas.ui.web.view.descriptor.SqlViewRowFieldBinding;
 import de.metas.ui.web.view.descriptor.SqlViewRowFieldBinding.SqlViewRowFieldLoader;
 import de.metas.ui.web.view.descriptor.SqlViewSelectData;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.LookupValue;
@@ -482,20 +483,20 @@ class SqlViewDataRepository implements IViewDataRepository
 	}
 
 	@Override
-	public List<IViewRow> retrievePage(final ViewEvaluationCtx viewEvalCtx,
-			final ViewRowIdsOrderedSelection orderedSelection,
-			final int firstRow,
-			final int pageLength) throws DBException
+	public List<IViewRow> retrievePage(
+			@NonNull final ViewEvaluationCtx viewEvalCtx,
+			@NonNull final ViewRowIdsOrderedSelection orderedSelection,
+			@NonNull final PageIndex pageIndex) throws DBException
 	{
-		logger.debug("Getting page: firstRow={}, pageLength={} - {}", firstRow, pageLength, this);
+		logger.debug("Getting page: {} - {}", pageIndex, this);
 		logger.debug("Using: {}", orderedSelection);
 
 		final ViewId viewId = orderedSelection.getViewId();
 		final SqlAndParams sqlAndParams = sqlViewSelect.selectByPage()
 				.viewEvalCtx(viewEvalCtx)
 				.viewId(viewId)
-				.firstRowZeroBased(firstRow)
-				.pageLength(pageLength)
+				.firstRowZeroBased(pageIndex.getFirstRow())
+				.pageLength(pageIndex.getPageLength())
 				.build();
 
 		PreparedStatement pstmt = null;
@@ -503,11 +504,11 @@ class SqlViewDataRepository implements IViewDataRepository
 		try
 		{
 			pstmt = DB.prepareStatement(sqlAndParams.getSql(), ITrx.TRXNAME_ThreadInherited);
-			pstmt.setMaxRows(pageLength);
+			pstmt.setMaxRows(pageIndex.getPageLength());
 			DB.setParameters(pstmt, sqlAndParams.getSqlParams());
 
 			rs = pstmt.executeQuery();
-			final List<IViewRow> page = loadViewRows(rs, viewEvalCtx, viewId, pageLength);
+			final List<IViewRow> page = loadViewRows(rs, viewEvalCtx, viewId, pageIndex.getPageLength());
 			return page;
 		}
 		catch (final SQLException | DBException e)
@@ -522,20 +523,20 @@ class SqlViewDataRepository implements IViewDataRepository
 	}
 
 	@Override
-	public List<DocumentId> retrieveRowIdsByPage(final ViewEvaluationCtx viewEvalCtx,
-			final ViewRowIdsOrderedSelection orderedSelection,
-			final int firstRow,
-			final int pageLength)
+	public List<DocumentId> retrieveRowIdsByPage(
+			@NonNull final ViewEvaluationCtx viewEvalCtx,
+			@NonNull final ViewRowIdsOrderedSelection orderedSelection,
+			@NonNull final PageIndex pageIndex)
 	{
-		logger.debug("Getting page: firstRow={}, pageLength={} - {}", firstRow, pageLength, this);
+		logger.debug("Getting page: {} - {}", pageIndex, this);
 		logger.debug("Using: {}", orderedSelection);
 
 		final ViewId viewId = orderedSelection.getViewId();
 		final SqlAndParams sqlAndParams = sqlViewSelect.selectRowIdsByPage()
 				.viewEvalCtx(viewEvalCtx)
 				.viewId(viewId)
-				.firstRowZeroBased(firstRow)
-				.pageLength(pageLength)
+				.firstRowZeroBased(pageIndex.getFirstRow())
+				.pageLength(pageIndex.getPageLength())
 				.build();
 
 		PreparedStatement pstmt = null;
@@ -543,7 +544,7 @@ class SqlViewDataRepository implements IViewDataRepository
 		try
 		{
 			pstmt = DB.prepareStatement(sqlAndParams.getSql(), ITrx.TRXNAME_ThreadInherited);
-			pstmt.setMaxRows(pageLength);
+			pstmt.setMaxRows(pageIndex.getPageLength());
 			DB.setParameters(pstmt, sqlAndParams.getSqlParams());
 
 			rs = pstmt.executeQuery();

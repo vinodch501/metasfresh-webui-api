@@ -222,7 +222,7 @@ import lombok.NonNull;
 					public ViewResult load(final PageIndex pageIndex)
 					{
 						final ViewRowsOrderBy orderBys = ViewRowsOrderBy.empty(jsonOpts); // default
-						return view.getPage(pageIndex.getFirstRow(), pageIndex.getPageLength(), orderBys);
+						return view.getPage(pageIndex, orderBys);
 					}
 
 				});

@@ -163,7 +163,7 @@ public final class JSONViewResult
 
 		final String adLanguage = jsonOpts.getAdLanguage();
 		description = viewResult.getViewDescription(adLanguage);
-		headerProperties = JSONViewHeaderProperties.of(viewResult.getHeaderProperties(), adLanguage);
+		headerProperties = JSONViewHeaderProperties.of(viewResult.getViewHeaderProperties(), adLanguage);
 
 		final long size = viewResult.getSize();
 		this.size = size >= 0 ? size : null;

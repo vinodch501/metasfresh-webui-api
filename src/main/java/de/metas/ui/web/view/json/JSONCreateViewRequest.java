@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import de.metas.ui.web.document.filter.json.JSONDocumentFilter;
+import de.metas.ui.web.view.IView;
 import de.metas.ui.web.view.ViewProfileId;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentPath;
@@ -83,8 +84,7 @@ public final class JSONCreateViewRequest
 			@JsonProperty("filters") final List<JSONDocumentFilter> filters,
 			@JsonProperty("filterOnlyIds") final List<Integer> filterOnlyIds,
 			@JsonProperty("queryFirstRow") final int queryFirstRow,
-			@JsonProperty("queryPageLength") final int queryPageLength
-	)
+			@JsonProperty("queryPageLength") final int queryPageLength)
 	{
 		this.windowId = windowId;
 		this.viewType = viewType;
@@ -94,8 +94,8 @@ public final class JSONCreateViewRequest
 		this.filters = filters == null ? ImmutableList.of() : ImmutableList.copyOf(filters);
 		this.filterOnlyIds = filterOnlyIds == null ? ImmutableSet.of() : ImmutableSet.copyOf(filterOnlyIds);
 
-		this.queryFirstRow = queryFirstRow;
-		this.queryPageLength = queryPageLength;
+		this.queryFirstRow = queryFirstRow >= 0 ? queryFirstRow : 0;
+		this.queryPageLength = queryPageLength > 0 ? queryPageLength : IView.DEFAULT_PAGE_SIZE;
 	}
 
 	public Set<DocumentPath> getReferencingDocumentPaths()

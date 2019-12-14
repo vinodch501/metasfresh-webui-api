@@ -29,6 +29,7 @@ import de.metas.ui.web.view.ViewResult;
 import de.metas.ui.web.view.ViewRowsOrderBy;
 import de.metas.ui.web.view.event.ViewChangesCollector;
 import de.metas.ui.web.view.json.JSONViewDataType;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.DocumentPath;
@@ -242,8 +243,7 @@ public abstract class AbstractCustomView<T extends IViewRow> implements IView
 	 */
 	@Override
 	public final ViewResult getPage(
-			final int firstRow,
-			final int pageLength,
+			@NonNull final PageIndex pageIndex,
 			@NonNull final ViewRowsOrderBy orderBys)
 	{
 		final ViewRowsOrderBy orderBysEffective = !orderBys.isEmpty()
@@ -253,11 +253,15 @@ public abstract class AbstractCustomView<T extends IViewRow> implements IView
 		final List<IViewRow> pageRows = getRows()
 				.stream()
 				.sorted(orderBysEffective.toComparator())
-				.skip(firstRow >= 0 ? firstRow : 0)
-				.limit(pageLength > 0 ? pageLength : 30)
+				.skip(pageIndex.getFirstRow())
+				.limit(pageIndex.getPageLength())
 				.collect(ImmutableList.toImmutableList());
 
-		return ViewResult.ofViewAndPage(this, firstRow, pageLength, orderBysEffective.toDocumentQueryOrderByList(), pageRows);
+		return ViewResult.ofViewAndPage(
+				this,
+				pageIndex,
+				orderBysEffective.toDocumentQueryOrderByList(),
+				pageRows);
 	}
 
 	@Override

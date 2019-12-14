@@ -1,6 +1,18 @@
 package de.metas.ui.web.view.util;
 
-import de.metas.printing.esb.base.util.Check;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+
+import de.metas.util.Check;
+import lombok.NonNull;
+import lombok.ToString;
 import lombok.Value;
 
 /*
@@ -28,9 +40,9 @@ import lombok.Value;
 @Value
 public class PageIndex
 {
-	public static PageIndex ofFirstRowAndPageLength(final int firstRow, final int pageLength)
+	public static PageIndex ofFirstRowAndPageLength(final int firstRowZeroBased, final int pageLength)
 	{
-		return new PageIndex(firstRow, pageLength);
+		return new PageIndex(firstRowZeroBased, pageLength);
 	}
 
 	public static PageIndex getPageContainingRow(final int rowIndex, final int pageLength)
@@ -44,6 +56,19 @@ public class PageIndex
 		return ofFirstRowAndPageLength(firstRow, pageLength);
 	}
 
+	public static PageIndex firstPage(final int pageLength)
+	{
+		return ofFirstRowAndPageLength(0, pageLength);
+	}
+
+	public static PageIndex all()
+	{
+		return ALL;
+	}
+
+	private static final PageIndex ALL = new PageIndex(0, Integer.MAX_VALUE);
+
+	/** Page's first row (zero based index) */
 	int firstRow;
 	int pageLength;
 
@@ -54,5 +79,117 @@ public class PageIndex
 
 		this.firstRow = firstRow;
 		this.pageLength = pageLength;
+	}
+
+	public int getLastRowIndex()
+	{
+		return firstRow + pageLength - 1;
+	}
+
+	@VisibleForTesting
+	Iterator<PageIndex> iterator(final int maxRows)
+	{
+		return new PageIndexIterator(this, maxRows);
+	}
+
+	private Spliterator<PageIndex> spliterator(final int maxRows)
+	{
+		return Spliterators.spliteratorUnknownSize(
+				iterator(maxRows),
+				Spliterator.ORDERED | Spliterator.IMMUTABLE);
+	}
+
+	public <T> Stream<T> iterateAndStream(
+			final int maxRows,
+			@NonNull final Function<PageIndex, Stream<T>> pageFetcher)
+	{
+		return StreamSupport.stream(spliterator(maxRows), false)
+				.flatMap(pageFetcher);
+	}
+
+	@ToString
+	private static final class PageIndexIterator implements Iterator<PageIndex>
+	{
+		private final int maxRows;
+		private PageIndex nextPage;
+
+		public PageIndexIterator(@NonNull final PageIndex firstPage, final int maxRows)
+		{
+			Check.assumeGreaterThanZero(maxRows, "maxRows");
+
+			this.maxRows = maxRows;
+			nextPage = adjustFirstPageIfNeeded(firstPage, maxRows);
+		}
+
+		private static PageIndex adjustFirstPageIfNeeded(final PageIndex firstPage, final int maxRows)
+		{
+			final int lastRow = firstPage.getLastRowIndex();
+			final int lastRowAllowed = maxRows - 1;
+			if (lastRow <= lastRowAllowed)
+			{
+				return firstPage;
+			}
+			else
+			{
+				final int firstRow = firstPage.getFirstRow();
+				final int pageLengthAdjusted = lastRowAllowed - firstRow + 1;
+				if (pageLengthAdjusted > 0)
+				{
+					return ofFirstRowAndPageLength(firstRow, pageLengthAdjusted);
+				}
+				else
+				{
+					return null;
+				}
+			}
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			return nextPage != null;
+		}
+
+		@Override
+		public PageIndex next()
+		{
+			if (nextPage == null)
+			{
+				throw new NoSuchElementException();
+			}
+
+			final PageIndex currentPage = nextPage;
+			nextPage = computeNextPageOrNull(nextPage, maxRows);
+
+			return currentPage;
+		}
+
+		private static PageIndex computeNextPageOrNull(final PageIndex page, final int maxRows)
+		{
+			final int lastRowAllowed = maxRows - 1;
+
+			final int pageLastRow = page.getLastRowIndex();
+			final int pageLength = page.getPageLength();
+
+			final int nextPageFirstRow = pageLastRow + 1;
+			final int nextPageLastRow = nextPageFirstRow + pageLength - 1;
+
+			if (nextPageLastRow <= lastRowAllowed)
+			{
+				return ofFirstRowAndPageLength(nextPageFirstRow, pageLength);
+			}
+			else
+			{
+				final int nextPageLength = lastRowAllowed - nextPageFirstRow + 1;
+				if (nextPageLength > 0)
+				{
+					return PageIndex.ofFirstRowAndPageLength(nextPageFirstRow, nextPageLength);
+				}
+				else
+				{
+					return null;
+				}
+			}
+		}
 	}
 }

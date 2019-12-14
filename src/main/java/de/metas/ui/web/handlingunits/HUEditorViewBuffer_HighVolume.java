@@ -28,6 +28,7 @@ import de.metas.ui.web.view.ViewEvaluationCtx;
 import de.metas.ui.web.view.ViewId;
 import de.metas.ui.web.view.ViewRowIdsOrderedSelection;
 import de.metas.ui.web.view.ViewRowsOrderBy;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.json.JSONOptions;
@@ -216,7 +217,7 @@ public class HUEditorViewBuffer_HighVolume implements HUEditorViewBuffer
 		final JSONOptions jsonOpts = JSONOptions.newInstance();
 
 		final ViewRowsOrderBy orderBys = ViewRowsOrderBy.of(defaultSelection.getOrderBys(), jsonOpts);
-		return streamPage(0, STREAM_ALL_MAX_SIZE_ALLOWED, filter, orderBys)
+		return streamPage(PageIndex.firstPage(STREAM_ALL_MAX_SIZE_ALLOWED), filter, orderBys)
 				.flatMap(HUEditorRow::streamRecursive)
 				.map(HUEditorRow::cast)
 				.filter(HUEditorRowFilters.toPredicate(filter));
@@ -235,7 +236,7 @@ public class HUEditorViewBuffer_HighVolume implements HUEditorViewBuffer
 		if (onlyRowIds.isEmpty())
 		{
 			final List<DocumentQueryOrderBy> defaultOrderBys = getDefaultSelection().getOrderBys();
-			huEditorRowIds = streamHUIdsByPage(0, Integer.MAX_VALUE, defaultOrderBys)
+			huEditorRowIds = streamHUIdsByPage(PageIndex.all(), defaultOrderBys)
 					.map(HUEditorRowId::ofTopLevelHU);
 		}
 		else
@@ -254,12 +255,11 @@ public class HUEditorViewBuffer_HighVolume implements HUEditorViewBuffer
 
 	@Override
 	public Stream<HUEditorRow> streamPage(
-			final int firstRow,
-			final int pageLength,
+			final PageIndex pageIndex,
 			@NonNull final HUEditorRowFilter filter,
 			@NonNull final ViewRowsOrderBy orderBys)
 	{
-		final Iterator<HUEditorRowId> rowIds = streamHUIdsByPage(firstRow, pageLength, orderBys.toDocumentQueryOrderByList())
+		final Iterator<HUEditorRowId> rowIds = streamHUIdsByPage(pageIndex, orderBys.toDocumentQueryOrderByList())
 				.map(HUEditorRowId::ofTopLevelHU)
 				.iterator();
 
@@ -279,12 +279,12 @@ public class HUEditorViewBuffer_HighVolume implements HUEditorViewBuffer
 		return (firstRow, maxRows) -> huEditorRepo.retrieveHUIdsPage(viewEvalCtx, selection, firstRow, maxRows);
 	}
 
-	private Stream<HuId> streamHUIdsByPage(final int firstRow, final int maxRows, final List<DocumentQueryOrderBy> orderBys)
+	private Stream<HuId> streamHUIdsByPage(final PageIndex pageIndex, final List<DocumentQueryOrderBy> orderBys)
 	{
 		return IteratorUtils.<HuId> newPagedIterator()
-				.firstRow(firstRow)
-				.maxRows(maxRows)
-				.pageSize(100) // fetch 100items/chunk
+				.firstRow(pageIndex.getFirstRow())
+				.maxRows(pageIndex.getPageLength())
+				.pageSize(100) // i.e. chunk size: fetch 100items/chunk
 				.pageFetcher(huIdsPageFetcher(orderBys))
 				.build()
 				.stream();

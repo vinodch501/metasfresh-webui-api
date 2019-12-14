@@ -35,6 +35,7 @@ import de.metas.ui.web.view.ViewResult;
 import de.metas.ui.web.view.ViewRowsOrderBy;
 import de.metas.ui.web.view.event.ViewChangesCollector;
 import de.metas.ui.web.view.json.JSONViewDataType;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.DocumentPath;
@@ -221,17 +222,16 @@ public class PPOrderLinesView implements IView
 
 	@Override
 	public ViewResult getPage(
-			final int firstRow, 
-			final int pageLength, 
+			@NonNull final PageIndex pageIndex,
 			@NonNull final ViewRowsOrderBy orderBys)
 	{
 		final Stream<PPOrderLineRow> stream = getData().stream()
-				.skip(firstRow)
-				.limit(pageLength);
+				.skip(pageIndex.getFirstRow())
+				.limit(pageIndex.getPageLength());
 
 		final List<IViewRow> page = stream.collect(GuavaCollectors.toImmutableList());
 
-		return ViewResult.ofViewAndPage(this, firstRow, pageLength, orderBys.toDocumentQueryOrderByList(), page);
+		return ViewResult.ofViewAndPage(this, pageIndex, orderBys.toDocumentQueryOrderByList(), page);
 	}
 
 	@Override

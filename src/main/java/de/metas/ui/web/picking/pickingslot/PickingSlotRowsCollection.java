@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 import de.metas.ui.web.exceptions.EntityNotFoundException;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.util.GuavaCollectors;
@@ -44,9 +45,7 @@ import lombok.ToString;
 
 public final class PickingSlotRowsCollection
 {
-	private static final int DEFAULT_PAGE_LENGTH = 30;
-
-	public static final PickingSlotRowsCollection ofSupplier(final Supplier<List<PickingSlotRow>> rowsSupplier)
+	public static PickingSlotRowsCollection ofSupplier(final Supplier<List<PickingSlotRow>> rowsSupplier)
 	{
 		return new PickingSlotRowsCollection(rowsSupplier);
 	}
@@ -69,7 +68,7 @@ public final class PickingSlotRowsCollection
 		rowsSupplier.forget();
 	}
 
-	private final PickingSlotRowsIndex getRowsIndex()
+	private PickingSlotRowsIndex getRowsIndex()
 	{
 		return rowsSupplier.get();
 	}
@@ -79,11 +78,11 @@ public final class PickingSlotRowsCollection
 		return getRowsIndex().size();
 	}
 
-	public List<PickingSlotRow> getPage(final int firstRow, final int pageLength)
+	public List<PickingSlotRow> getPage(final PageIndex pageIndex)
 	{
 		return getRowsIndex().stream()
-				.skip(firstRow >= 0 ? firstRow : 0)
-				.limit(pageLength > 0 ? pageLength : DEFAULT_PAGE_LENGTH)
+				.skip(pageIndex.getFirstRow())
+				.limit(pageIndex.getPageLength())
 				.collect(ImmutableList.toImmutableList());
 	}
 
@@ -127,7 +126,7 @@ public final class PickingSlotRowsCollection
 		return getRowsIndex().getRootRowId(rowId);
 	}
 
-	private static final PickingSlotRow assertRowNotNull(final PickingSlotRowId pickingSlotRowId, final PickingSlotRow pickingSlotRow)
+	private static PickingSlotRow assertRowNotNull(final PickingSlotRowId pickingSlotRowId, final PickingSlotRow pickingSlotRow)
 	{
 		if (pickingSlotRow == null)
 		{
@@ -163,7 +162,7 @@ public final class PickingSlotRowsCollection
 					.collect(GuavaCollectors.toImmutableMap());
 		}
 
-		private static final Stream<Map.Entry<PickingSlotRowId, PickingSlotRowId>> streamChild2RootRowIdsRecursivelly(final PickingSlotRow row)
+		private static Stream<Map.Entry<PickingSlotRowId, PickingSlotRowId>> streamChild2RootRowIdsRecursivelly(final PickingSlotRow row)
 		{
 			final PickingSlotRowId rootRowId = row.getPickingSlotRowId();
 			return row.streamThisRowAndIncludedRowsRecursivelly()
@@ -185,12 +184,11 @@ public final class PickingSlotRowsCollection
 			}
 			return getRow(rootRowId);
 		}
-		
+
 		public PickingSlotRowId getRootRowId(final PickingSlotRowId rowId)
 		{
 			return rowId2rootRowId.get(rowId);
 		}
-
 
 		public long size()
 		{

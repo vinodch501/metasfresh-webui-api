@@ -19,6 +19,7 @@ import de.metas.ui.web.document.filter.DocumentFilter;
 import de.metas.ui.web.exceptions.EntityNotFoundException;
 import de.metas.ui.web.process.view.ViewActionDescriptorsList;
 import de.metas.ui.web.view.json.JSONViewDataType;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.DocumentPath;
@@ -51,6 +52,8 @@ import lombok.NonNull;
 
 public interface IView
 {
+	int DEFAULT_PAGE_SIZE = 30;
+
 	ViewId getViewId();
 
 	JSONViewDataType getViewType();
@@ -103,7 +106,7 @@ public interface IView
 	{
 		// nothing
 	}
-	
+
 	default void afterDestroy()
 	{
 		// nothing
@@ -137,14 +140,13 @@ public interface IView
 		invalidateAll();
 	}
 
-	ViewResult getPage(int firstRow, int pageLength, ViewRowsOrderBy orderBy);
+	ViewResult getPage(PageIndex pageIndex, ViewRowsOrderBy orderBy);
 
 	default ViewResult getPageWithRowIdsOnly(
-			final int firstRow,
-			final int pageLength,
+			final PageIndex pageIndex,
 			final ViewRowsOrderBy orderBy)
 	{
-		return getPage(firstRow, pageLength, orderBy);
+		return getPage(pageIndex, orderBy);
 	}
 
 	IViewRow getById(DocumentId rowId) throws EntityNotFoundException;

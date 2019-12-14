@@ -44,6 +44,7 @@ import de.metas.ui.web.view.json.JSONViewLayout;
 import de.metas.ui.web.view.json.JSONViewProfilesList;
 import de.metas.ui.web.view.json.JSONViewResult;
 import de.metas.ui.web.view.json.JSONViewRow;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.controller.WindowRestController;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.LookupValuesList;
@@ -154,8 +155,7 @@ public class ViewRestController
 		{
 			final JSONOptions jsonOpts = newJSONOptions();
 			result = view.getPage(
-					jsonRequest.getQueryFirstRow(),
-					jsonRequest.getQueryPageLength(),
+					PageIndex.ofFirstRowAndPageLength(jsonRequest.getQueryFirstRow(), jsonRequest.getQueryPageLength()),
 					ViewRowsOrderBy.empty(jsonOpts));
 		}
 		else
@@ -239,11 +239,14 @@ public class ViewRestController
 		userSession.assertLoggedIn();
 
 		final ViewId viewId = ViewId.of(windowId, viewIdStr);
+		final PageIndex pageIndex = PageIndex.ofFirstRowAndPageLength(
+				firstRow >= 0 ? firstRow : 0,
+				pageLength > 0 ? pageLength : IView.DEFAULT_PAGE_SIZE);
+
 		final IView view = viewsRepo.getView(viewId);
 		final JSONOptions jsonOpts = newJSONOptions();
 		final ViewResult result = view.getPage(
-				firstRow,
-				pageLength,
+				pageIndex,
 				ViewRowsOrderBy.parseString(orderBysListStr, jsonOpts));
 		final IViewRowOverrides rowOverrides = ViewRowOverridesHelper.getViewRowOverrides(view);
 		return JSONViewResult.of(result, rowOverrides, jsonOpts);

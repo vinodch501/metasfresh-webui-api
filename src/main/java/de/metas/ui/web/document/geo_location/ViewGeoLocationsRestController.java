@@ -1,9 +1,21 @@
 package de.metas.ui.web.document.geo_location;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.adempiere.exceptions.AdempiereException;
+import org.slf4j.Logger;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+
 import de.metas.bpartner.BPartnerId;
 import de.metas.bpartner.GeographicalCoordinatesWithBPartnerLocationId;
 import de.metas.bpartner.service.IBPartnerDAO;
@@ -24,21 +36,12 @@ import de.metas.ui.web.view.ViewRestController;
 import de.metas.ui.web.view.ViewResult;
 import de.metas.ui.web.view.ViewRowsOrderBy;
 import de.metas.ui.web.view.descriptor.ViewLayout;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.json.JSONOptions;
 import de.metas.ui.web.window.descriptor.DocumentLayoutElementFieldDescriptor;
 import de.metas.util.Services;
 import lombok.NonNull;
-import org.adempiere.exceptions.AdempiereException;
-import org.slf4j.Logger;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /*
  * #%L
@@ -110,7 +113,7 @@ public class ViewGeoLocationsRestController
 		final GeoLocationDocumentDescriptor geoLocationDescriptor = geoLocationDocumentService.getGeoLocationDocumentDescriptor(viewFieldNames);
 
 		final ViewRowsOrderBy orderBy = ViewRowsOrderBy.of(view.getDefaultOrderBys(), newJsonOpts());
-		final ViewResult rows = view.getPage(0, limitEffective, orderBy);
+		final ViewResult rows = view.getPage(PageIndex.firstPage(limitEffective), orderBy);
 
 		final List<JsonViewRowGeoLocation> geoLocations = retrieveGeoLocations(rows, geoLocationDescriptor);
 
@@ -130,7 +133,7 @@ public class ViewGeoLocationsRestController
 				.collect(ImmutableSet.toImmutableSet());
 
 		// bpartner window doesn't have a field for "c_bpartner_id", so i'm adding it like this
-		return ImmutableSet.<String>builder()
+		return ImmutableSet.<String> builder()
 				.addAll(fieldNames)
 				.add(viewLayout.getIdFieldName())
 				.build();

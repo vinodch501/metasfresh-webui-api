@@ -36,6 +36,7 @@ import de.metas.ui.web.view.ViewResult;
 import de.metas.ui.web.view.ViewRowsOrderBy;
 import de.metas.ui.web.view.event.ViewChangesCollector;
 import de.metas.ui.web.view.json.JSONViewDataType;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.DocumentPath;
@@ -175,13 +176,12 @@ public class PickingSlotsClearingView implements IView, IViewRowOverrides
 
 	@Override
 	public ViewResult getPage(
-			final int firstRow, 
-			final int pageLength, 
+			@NonNull final PageIndex pageIndex,
 			@NonNull final ViewRowsOrderBy orderBys)
 	{
-		final List<PickingSlotRow> pageRows = rows.getPage(firstRow, pageLength);
+		final List<PickingSlotRow> pageRows = rows.getPage(pageIndex);
 
-		return ViewResult.ofViewAndPage(this, firstRow, pageLength, orderBys.toDocumentQueryOrderByList(), pageRows);
+		return ViewResult.ofViewAndPage(this, pageIndex, orderBys.toDocumentQueryOrderByList(), pageRows);
 	}
 
 	@Override

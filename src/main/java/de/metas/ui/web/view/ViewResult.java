@@ -1,23 +1,24 @@
 package de.metas.ui.web.view;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 import de.metas.i18n.ITranslatableString;
 import de.metas.ui.web.document.filter.DocumentFilter;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.model.DocumentQueryOrderBy;
 import de.metas.util.Check;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
 /*
  * #%L
@@ -42,42 +43,23 @@ import lombok.NonNull;
  */
 
 @Immutable
+@ToString
 public final class ViewResult
 {
 	/**
 	 * Creates a view result having given loaded page
 	 */
 	public static ViewResult ofViewAndPage(
-			final IView view //
-			, final int firstRow //
-			, final int pageLength //
-			, final List<DocumentQueryOrderBy> orderBys //
-			, final List<? extends IViewRow> page //
-	)
+			@NonNull final IView view,
+			@NonNull final PageIndex pageIndex,
+			final List<DocumentQueryOrderBy> orderBys,
+			final List<? extends IViewRow> page)
 	{
 		return builder()
 				.view(view)
-				.firstRow(firstRow)
-				.pageLength(pageLength)
+				.pageIndex(pageIndex)
 				.orderBys(orderBys)
 				.rows(page)
-				.build();
-	}
-
-	public static ViewResult ofViewAndRowIds(
-			final IView view //
-			, final int firstRow //
-			, final int pageLength //
-			, final List<DocumentQueryOrderBy> orderBys //
-			, final List<DocumentId> rowIds //
-	)
-	{
-		return builder()
-				.view(view)
-				.firstRow(firstRow)
-				.pageLength(pageLength)
-				.orderBys(orderBys)
-				.rowIds(rowIds)
 				.build();
 	}
 
@@ -91,25 +73,36 @@ public final class ViewResult
 
 	//
 	// View info
+	@Getter
 	private final ViewId viewId;
+	@Getter
 	private final ViewProfileId profileId;
+	@Getter
 	private final ViewId parentViewId;
 	private final ITranslatableString viewDescription;
+	@Getter
 	private final ViewHeaderProperties viewHeaderProperties;
+	@Getter
 	private final long size;
+	@Getter
 	private final int queryLimit;
+	@Getter
 	private final boolean queryLimitHit;
 
+	@Getter
 	private final ImmutableList<DocumentFilter> stickyFilters;
+	@Getter
 	private final ImmutableList<DocumentFilter> filters;
+	@Getter
 	private final ImmutableList<DocumentQueryOrderBy> orderBys;
 
 	//
 	// Page info
-	private final int firstRow;
-	private final int pageLength;
+	@Nullable
+	private final PageIndex pageIndex;
 	private final ImmutableList<DocumentId> rowIds;
 	private final ImmutableList<IViewRow> page;
+	@Getter
 	private final ImmutableMap<String, ViewResultColumn> columnInfosByFieldName;
 
 	/**
@@ -119,7 +112,7 @@ public final class ViewResult
 	@Builder
 	private ViewResult(
 			@NonNull final IView view,
-			@NonNull final Integer firstRow,
+			@NonNull final PageIndex pageIndex,
 			@NonNull final Integer pageLength,
 			@NonNull final List<DocumentQueryOrderBy> orderBys,
 			@Nullable final List<DocumentId> rowIds,
@@ -145,8 +138,7 @@ public final class ViewResult
 		{
 			throw new IllegalArgumentException("rowIds or rows shall not be null");
 		}
-		this.firstRow = firstRow;
-		this.pageLength = pageLength;
+		this.pageIndex = pageIndex;
 		this.rowIds = rowIds != null ? ImmutableList.copyOf(rowIds) : null;
 		this.page = rows != null ? ImmutableList.copyOf(rows) : null;
 		this.columnInfosByFieldName = columnInfos != null ? Maps.uniqueIndex(columnInfos, ViewResultColumn::getFieldName)
@@ -171,46 +163,10 @@ public final class ViewResult
 
 		//
 		// Page
-		firstRow = 0;
-		pageLength = 0;
+		pageIndex = null;
 		rowIds = null;
 		page = null;
 		columnInfosByFieldName = ImmutableMap.of();
-	}
-
-	@Override
-	public String toString()
-	{
-		return MoreObjects.toStringHelper(this)
-				.omitNullValues()
-				//
-				// View info
-				.add("viewId", viewId)
-				.add("profileId", profileId)
-				.add("filters", filters)
-				.add("orderBys", orderBys)
-				//
-				// Page info
-				.add("firstRow", firstRow)
-				.add("pageLength", pageLength)
-				.add("page", page)
-				//
-				.toString();
-	}
-
-	public ViewId getViewId()
-	{
-		return viewId;
-	}
-
-	public ViewProfileId getProfileId()
-	{
-		return profileId;
-	}
-
-	public ViewId getParentViewId()
-	{
-		return parentViewId;
 	}
 
 	public String getViewDescription(final String adLanguage)
@@ -223,39 +179,14 @@ public final class ViewResult
 		return !Check.isEmpty(viewDescriptionStr, true) ? viewDescriptionStr : null;
 	}
 
-	public ViewHeaderProperties getHeaderProperties()
-	{
-		return viewHeaderProperties;
-	}
-
-	public long getSize()
-	{
-		return size;
-	}
-
 	public int getFirstRow()
 	{
-		return firstRow;
+		return pageIndex != null ? pageIndex.getFirstRow() : 0;
 	}
 
 	public int getPageLength()
 	{
-		return pageLength;
-	}
-
-	public List<DocumentFilter> getStickyFilters()
-	{
-		return stickyFilters;
-	}
-
-	public List<DocumentFilter> getFilters()
-	{
-		return filters;
-	}
-
-	public List<DocumentQueryOrderBy> getOrderBys()
-	{
-		return orderBys;
+		return pageIndex != null ? pageIndex.getPageLength() : 0;
 	}
 
 	public boolean isPageLoaded()
@@ -269,8 +200,10 @@ public final class ViewResult
 		{
 			return rowIds;
 		}
-
-		return getPage().stream().map(IViewRow::getId).collect(ImmutableList.toImmutableList());
+		else
+		{
+			return getPage().stream().map(IViewRow::getId).collect(ImmutableList.toImmutableList());
+		}
 	}
 
 	public boolean isEmpty()
@@ -289,20 +222,5 @@ public final class ViewResult
 			throw new IllegalStateException("page not loaded for " + this);
 		}
 		return page;
-	}
-
-	public Map<String, ViewResultColumn> getColumnInfosByFieldName()
-	{
-		return columnInfosByFieldName;
-	}
-
-	public int getQueryLimit()
-	{
-		return queryLimit;
-	}
-
-	public boolean isQueryLimitHit()
-	{
-		return queryLimitHit;
 	}
 }

@@ -40,6 +40,7 @@ import de.metas.ui.web.document.filter.sql.SqlDocumentFilterConverterContext;
 import de.metas.ui.web.exceptions.EntityNotFoundException;
 import de.metas.ui.web.view.event.ViewChangesCollector;
 import de.metas.ui.web.view.json.JSONViewDataType;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.DocumentPath;
@@ -364,9 +365,8 @@ public final class DefaultView implements IEditableView
 
 	@Override
 	public ViewResult getPage(
-			final int firstRow,
-			final int pageLength,
-			final ViewRowsOrderBy orderBy)
+			@NonNull final PageIndex pageIndex,
+			@NonNull final ViewRowsOrderBy orderBy)
 	{
 		assertNotClosed();
 		checkChangedRows();
@@ -374,15 +374,14 @@ public final class DefaultView implements IEditableView
 		final ViewEvaluationCtx evalCtx = getViewEvaluationCtx();
 		final ViewRowIdsOrderedSelection orderedSelection = getOrderedSelection(orderBy.toDocumentQueryOrderByList());
 
-		final List<IViewRow> rows = viewDataRepository.retrievePage(evalCtx, orderedSelection, firstRow, pageLength);
+		final List<IViewRow> rows = viewDataRepository.retrievePage(evalCtx, orderedSelection, pageIndex);
 
 		// Add to cache
 		rows.forEach(row -> cache_rowsById.put(row.getId(), row));
 
 		return ViewResult.builder()
 				.view(this)
-				.firstRow(firstRow)
-				.pageLength(pageLength)
+				.pageIndex(pageIndex)
 				.orderBys(orderedSelection.getOrderBys())
 				.rows(rows)
 				.columnInfos(extractViewResultColumns(rows))
@@ -435,8 +434,7 @@ public final class DefaultView implements IEditableView
 
 	@Override
 	public ViewResult getPageWithRowIdsOnly(
-			final int firstRow,
-			final int pageLength,
+			@NonNull final PageIndex pageIndex,
 			@NonNull final ViewRowsOrderBy orderBy)
 	{
 		assertNotClosed();
@@ -445,12 +443,11 @@ public final class DefaultView implements IEditableView
 		final ViewEvaluationCtx evalCtx = getViewEvaluationCtx();
 		final ViewRowIdsOrderedSelection orderedSelection = getOrderedSelection(orderBy.toDocumentQueryOrderByList());
 
-		final List<DocumentId> rowIds = viewDataRepository.retrieveRowIdsByPage(evalCtx, orderedSelection, firstRow, pageLength);
+		final List<DocumentId> rowIds = viewDataRepository.retrieveRowIdsByPage(evalCtx, orderedSelection, pageIndex);
 
 		return ViewResult.builder()
 				.view(this)
-				.firstRow(firstRow)
-				.pageLength(pageLength)
+				.pageIndex(pageIndex)
 				.orderBys(orderedSelection.getOrderBys())
 				.rowIds(rowIds)
 				.build();
@@ -529,24 +526,31 @@ public final class DefaultView implements IEditableView
 		}
 		else if (rowIds.isAll())
 		{
+			// getPage(firstRow, pageLength, orderBy);
+			// final ViewEvaluationCtx evalCtx = getViewEvaluationCtx();
+			// viewDataRepository.retrieveById(evalCtx, getViewId(), rowId);
+
+			// TODO;
 			throw new UnsupportedOperationException("Streaming all rows is not supported");
 		}
-
-		// NOTE: we get/retrive one by one because we assume the "selected documents" were recently retrieved,
-		// and the records recently retrieved have a big chance to be cached.
-		return rowIds.stream()
-				.distinct()
-				.map(rowId -> {
-					try
-					{
-						return getOrRetrieveById(rowId);
-					}
-					catch (final EntityNotFoundException e)
-					{
-						return null;
-					}
-				})
-				.filter(row -> row != null);
+		else
+		{
+			// NOTE: we get/retrive one by one because we assume the "selected documents" were recently retrieved,
+			// and the records recently retrieved have a big chance to be cached.
+			return rowIds.stream()
+					.distinct()
+					.map(rowId -> {
+						try
+						{
+							return getOrRetrieveById(rowId);
+						}
+						catch (final EntityNotFoundException e)
+						{
+							return null;
+						}
+					})
+					.filter(Predicates.notNull());
+		}
 	}
 
 	@Override

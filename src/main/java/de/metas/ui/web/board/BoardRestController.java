@@ -49,6 +49,7 @@ import de.metas.ui.web.view.event.ViewChangesCollector;
 import de.metas.ui.web.view.json.JSONFilterViewRequest;
 import de.metas.ui.web.view.json.JSONViewDataType;
 import de.metas.ui.web.view.json.JSONViewResult;
+import de.metas.ui.web.view.util.PageIndex;
 import de.metas.ui.web.window.datatypes.DocumentId;
 import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.LookupValuesList;
@@ -300,11 +301,15 @@ public class BoardRestController
 	{
 		userSession.assertLoggedIn();
 
+		final PageIndex pageIndex = PageIndex.ofFirstRowAndPageLength(
+				firstRow,
+				pageLength > 0 ? pageLength : IView.DEFAULT_PAGE_SIZE);
+
 		final JSONOptions jsonOpts = newJSONOptions();
 		final ViewRowsOrderBy orderBys = ViewRowsOrderBy.parseString(orderBysListStr, jsonOpts);
 
 		final ViewResult viewResult = viewsRepo.getView(viewIdStr)
-				.getPageWithRowIdsOnly(firstRow, pageLength, orderBys);
+				.getPageWithRowIdsOnly(pageIndex, orderBys);
 
 		final List<Integer> boardCardIds = boardsRepo.retrieveCardIds(boardId);
 
